@@ -1,0 +1,13 @@
+{% comment %} WishmaX — Wishlist Page Template {% endcomment %}
+<div class="page-width" style="padding: 40px 20px; max-width: 1200px; margin: 0 auto;">
+  <h1 style="margin-bottom: 24px;">My Wishlist</h1>
+  <div id="wishmax-page-container">
+    <p style="color: #6d7175;">Loading your wishlist…</p>
+  </div>
+</div>
+
+<script>
+  window.__WISHMAX_APP_URL__ = {{ shop.metafields.wishmax.app_url | json | default: '' }};
+  window.__WISHMAX_CUSTOMER_ID__ = {{ customer.id | json | default: 'null' }};
+</script>
+<script src="{{ 'wishmax-page.js' | asset_url }}" defer></script>
