@@ -1,0 +1,12 @@
+{% comment %}
+  WishmaX — Theme App Extension embed block
+  Add this to your theme.liquid just before </body>
+{% endcomment %}
+
+<script>
+  window.__WISHMAX_APP_URL__ = {{ shop.metafields.wishmax.app_url | json | default: '' }};
+  window.__WISHMAX_CUSTOMER_ID__ = {{ customer.id | json | default: 'null' }};
+  window.__WISHMAX_PRODUCT_ID__ = {{ product.id | json | default: 'null' }};
+</script>
+
+<script src="{{ 'wishmax.js' | asset_url }}" defer></script>
