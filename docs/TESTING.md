@@ -16,19 +16,20 @@ For **structured manual QA** (step-by-step checks before release or for PR revie
 ## 1. Install dependencies
 
 ```bash
-cd wishmax   # or your clone path
+git clone https://github.com/whiteHatpro/wishme.git
+cd wishme
 npm install
 ```
 
 ## 2. Environment (local only)
 
-Create **`.env`** in the project root (gitignored). **Do not commit secrets.**
+Copy the template and fill in values from **Partner Dashboard → WishMe → Settings** (Client ID + secret):
 
 ```bash
-SHOPIFY_API_KEY="<from Partner Dashboard → App setup → Client ID>"
-SHOPIFY_API_SECRET="<from Partner Dashboard → Client secret>"
-SCOPES="read_customers,write_customers,read_products,write_script_tags,read_script_tags,read_themes,write_themes"
+cp env.example .env
 ```
+
+Edit **`.env`**. **Do not commit secrets.** Variables are documented in **[`env.example`](../env.example)** (`SHOPIFY_API_KEY`, `SHOPIFY_API_SECRET`, `SCOPES`, and `SHOPIFY_APP_URL` when not using only CLI defaults).
 
 **Database:** SQLite at `prisma/dev.sqlite` (gitignored). See **[README — Database (Prisma)](../README.md#database-prisma)** for full setup; first time or after pulling migrations:
 

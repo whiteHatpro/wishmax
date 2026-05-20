@@ -1,7 +1,7 @@
 # WishmaX — Requirements dry run
 
 **Source:** `docs/beede188-8c19-4738-b105-08b85dafe3cf_WishmaX.pdf`  
-**Repo:** `/Users/mohak.srivastav/Projects/wishmax`  
+**Repo:** https://github.com/whiteHatpro/wishme  
 **Last automated pass:** `npm run verify` + `npx shopify theme check --path extensions/wishmax-widget -C theme-check:theme-app-extension` (run locally after changes)
 
 ---

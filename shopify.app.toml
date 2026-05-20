@@ -1,6 +1,6 @@
 # This file stores configurations for your Shopify app.
 
-name = "wishmax"
+name = "wishme"
 client_id = "88fd29f22076ef832e5a11762d014184"
 
 # HTTPS placeholders required until the dev tunnel is up; CLI rewrites when

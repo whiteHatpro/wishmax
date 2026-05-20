@@ -15,7 +15,9 @@ Visit the [`shopify.dev` documentation](https://shopify.dev/docs/api/shopify-app
 
 ## Testing WishmaX on your machine
 
-For **this project** (clone prerequisites, `.env`, database, `shopify app dev`, theme embed + wishlist block, Flow trigger, share links), use **[docs/TESTING.md](docs/TESTING.md)**.
+For **this project** (clone prerequisites, `.env` from [`env.example`](env.example), database, `shopify app dev`, theme embed + wishlist block, Flow trigger, share links), use **[docs/TESTING.md](docs/TESTING.md)**.
+
+**Repository:** https://github.com/whiteHatpro/wishme — after clone, run `cp env.example .env`, fill credentials, and follow **Testing** §2–3.
 
 ### For reviewers and QA
 
@@ -39,6 +41,7 @@ WishmaX uses **Prisma** with **SQLite** for local development by default (`prism
 
 ```bash
 npm install
+cp env.example .env      # then fill SHOPIFY_API_KEY, SHOPIFY_API_SECRET, SCOPES from Partner Dashboard
 npx prisma migrate dev    # creates prisma/dev.sqlite and applies migrations
 npx prisma generate       # usually run by migrate dev; safe to repeat
 ```
