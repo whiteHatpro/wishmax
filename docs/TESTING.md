@@ -31,10 +31,10 @@ cp env.example .env
 
 Edit **`.env`**. **Do not commit secrets.** Variables are documented in **[`env.example`](../env.example)** (`SHOPIFY_API_KEY`, `SHOPIFY_API_SECRET`, `SCOPES`, and `SHOPIFY_APP_URL` when not using only CLI defaults).
 
-**Database:** SQLite at `prisma/dev.sqlite` (gitignored). See **[README — Database (Prisma)](../README.md#database-prisma)** for full setup; first time or after pulling migrations:
+**Database:** PostgreSQL via `DATABASE_URL`. Easiest local setup: `docker compose up -d`, then set `DATABASE_URL=postgresql://wishme:wishme@localhost:5432/wishme` in `.env`. See **[QA_DATABASE.md](QA_DATABASE.md)** for sharing a URL with QA (Neon, etc.).
 
 ```bash
-npx prisma migrate dev
+npx prisma migrate deploy
 npx prisma generate
 ```
 
@@ -101,6 +101,8 @@ Configure **Configure → Send events to Shopify Flow** in the embedded app so t
 ## 7. Docs
 
 - Manual QA (reviewers): **[MANUAL_QA.md](MANUAL_QA.md)**  
+- Shared DB for QA: **[QA_DATABASE.md](QA_DATABASE.md)**  
+- Deploy / Shopify: **[DEPLOY.md](DEPLOY.md)**  
 - Requirements dry-run vs PDF: **[REQUIREMENTS_DRY_RUN.md](REQUIREMENTS_DRY_RUN.md)**  
 - Product PDF: `docs/beede188-8c19-4738-b105-08b85dafe3cf_WishmaX.pdf`
 

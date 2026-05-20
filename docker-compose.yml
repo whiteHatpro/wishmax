@@ -1,0 +1,18 @@
+# Local PostgreSQL — same engine as production / shared QA databases (Neon, etc.)
+# Start: docker compose up -d
+# Stop: docker compose down
+services:
+  postgres:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: wishme
+      POSTGRES_PASSWORD: wishme
+      POSTGRES_DB: wishme
+    ports:
+      - "5432:5432"
+    volumes:
+      - wishme_pgdata:/var/lib/postgresql/data
+
+volumes:
+  wishme_pgdata:

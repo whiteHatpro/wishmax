@@ -26,6 +26,8 @@ For **this project** (clone prerequisites, `.env` from [`env.example`](env.examp
 | **[docs/TESTING.md](docs/TESTING.md)** | Local setup, automated verification, short smoke table |
 | **[docs/MANUAL_QA.md](docs/MANUAL_QA.md)** | Step-by-step manual QA before release or for PR review |
 | **[docs/REQUIREMENTS_DRY_RUN.md](docs/REQUIREMENTS_DRY_RUN.md)** | PDF requirements vs what the codebase implements |
+| **[docs/QA_DATABASE.md](docs/QA_DATABASE.md)** | Shared PostgreSQL / `DATABASE_URL` for QA |
+| **[docs/DEPLOY.md](docs/DEPLOY.md)** | Hosting the app and `shopify app deploy` |
 
 ### After every significant change
 
@@ -33,22 +35,24 @@ Run **`npm run verify`** (build, lint, Prisma validate, Shopify app config valid
 
 **Known noise:** `npm run build` may print CSS minify warnings from Polaris (`@media`); they do not fail the build.
 
-## Database (Prisma)
+## Database (Prisma + PostgreSQL)
 
-WishmaX uses **Prisma** with **SQLite** for local development by default (`prisma/schema.prisma` → `file:dev.sqlite`, resolved as **`prisma/dev.sqlite`**). That file is **gitignored** — each developer creates it locally.
+The app uses **PostgreSQL** via **`DATABASE_URL`** in `.env` (see [`env.example`](env.example)). This matches production and lets QA use a **shared URL** (Neon, etc.) — see **[docs/QA_DATABASE.md](docs/QA_DATABASE.md)**.
 
-**First clone or after pulling migrations:**
+**Quick local database:**
 
 ```bash
-npm install
-cp env.example .env      # then fill SHOPIFY_API_KEY, SHOPIFY_API_SECRET, SCOPES from Partner Dashboard
-npx prisma migrate dev    # creates prisma/dev.sqlite and applies migrations
-npx prisma generate       # usually run by migrate dev; safe to repeat
+docker compose up -d
+# In .env set DATABASE_URL="postgresql://wishme:wishme@localhost:5432/wishme"
+npx prisma migrate deploy
+npx prisma generate
 ```
 
-**Production / CI deploy:** the `setup` script runs `prisma generate` and `prisma migrate deploy` (see `package.json` → `"setup"`). Point production at your chosen database by changing the `datasource` in `schema.prisma` (and session storage if you move off Prisma SQLite).
+**Deploy to hosting + Shopify:** **[docs/DEPLOY.md](docs/DEPLOY.md)** (web host, env vars, `shopify app deploy`).
 
-**Useful commands:** `npx prisma studio` opens a GUI on the local DB. Migrations live in **`prisma/migrations/`**.
+**Useful commands:** `npx prisma studio`. Migrations: **`prisma/migrations/`** (`20260220120000_postgres_baseline`).
+
+**Production / CI:** `npm run setup` runs `prisma generate` + `prisma migrate deploy` — set `DATABASE_URL` on the host.
 
 ## Quick start
 
@@ -120,22 +124,9 @@ Please read the [documentation for @shopify/shopify-app-remix](https://www.npmjs
 
 ### Application Storage
 
-This template uses [Prisma](https://www.prisma.io/) to store session data, by default using an [SQLite](https://www.sqlite.org/index.html) database.
-The database is defined as a Prisma schema in `prisma/schema.prisma`.
+This app uses [Prisma](https://www.prisma.io/) with **PostgreSQL** via **`DATABASE_URL`** (`prisma/schema.prisma`) for sessions, wishlist data, and analytics. Use managed Postgres in production or `docker compose` locally — see **[docs/QA_DATABASE.md](docs/QA_DATABASE.md)**.
 
-This use of SQLite works in production if your app runs as a single instance.
-The database that works best for you depends on the data your app needs and how it is queried.
-You can run your database of choice on a server yourself or host it with a SaaS company.
-Here's a short list of databases providers that provide a free tier to get started:
-
-| Database   | Type             | Hosters                                                                                                                                                                                                                               |
-| ---------- | ---------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| MySQL      | SQL              | [Digital Ocean](https://www.digitalocean.com/products/managed-databases-mysql), [Planet Scale](https://planetscale.com/), [Amazon Aurora](https://aws.amazon.com/rds/aurora/), [Google Cloud SQL](https://cloud.google.com/sql/docs/mysql) |
-| PostgreSQL | SQL              | [Digital Ocean](https://www.digitalocean.com/products/managed-databases-postgresql), [Amazon Aurora](https://aws.amazon.com/rds/aurora/), [Google Cloud SQL](https://cloud.google.com/sql/docs/postgres)                                   |
-| Redis      | Key-value        | [Digital Ocean](https://www.digitalocean.com/products/managed-databases-redis), [Amazon MemoryDB](https://aws.amazon.com/memorydb/)                                                                                                        |
-| MongoDB    | NoSQL / Document | [Digital Ocean](https://www.digitalocean.com/products/managed-databases-mongodb), [MongoDB Atlas](https://www.mongodb.com/atlas/database)                                                                                                  |
-
-To use one of these, you can use a different [datasource provider](https://www.prisma.io/docs/reference/api-reference/prisma-schema-reference#datasource) in your `schema.prisma` file, or a different [SessionStorage adapter package](https://github.com/Shopify/shopify-api-js/blob/main/packages/shopify-api/docs/guides/session-storage.md).
+Production deploy for this app: **[docs/DEPLOY.md](docs/DEPLOY.md)**.
 
 ### Build
 
@@ -193,13 +184,14 @@ export default defineConfig({
 
 ### Database tables don't exist
 
-If you get this error:
+Ensure **`DATABASE_URL`** is set (see [`env.example`](env.example)), Postgres is running (`docker compose up -d` for local), then apply migrations:
 
-```
-The table `main.Session` does not exist in the current database.
+```bash
+npx prisma migrate deploy
+npx prisma generate
 ```
 
-You need to create the database for Prisma. Run the `setup` script in `package.json` using your preferred package manager.
+Or `npm run setup` on the server (runs `generate` + `migrate deploy`). If the connection fails, verify the URL and that PostgreSQL accepts connections (SSL params for Neon, etc.).
 
 ### Navigating/redirecting breaks an embedded app
 
