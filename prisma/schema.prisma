@@ -42,10 +42,29 @@ model WishlistConfig {
   iconSize        String  @default("medium")
   showOnPDP       Boolean @default(true)
   showOnPLP       Boolean @default(true)
+  showOnCart      Boolean @default(true)
   showInHeader    Boolean @default(true)
   allowGuest      Boolean @default(true)
   allowShare      Boolean @default(true)
   redirectToCart  Boolean @default(true)
+  /// Empty-state copy for the wishlist page (theme can override).
+  emptyStateMessage String @default("Your wishlist is empty.")
+  /// Suggested page handle for docs (merchant creates Page in Admin).
+  wishlistPageHandle String @default("wishlist")
+  buttonText        String @default("Add to Wishlist")
+  selectedButtonText String @default("Saved ♥")
+  hoverColor         String?
+  mobileIconSize     String  @default("medium")
+  /// When true, wishlist events attempt to notify Shopify Flow (requires trigger extension).
+  flowAutomationEnabled Boolean @default(true)
+  /// When true, POST /api/wishlist* must include a valid X-Wishmax-Key for the shop.
+  requireApiKeyForMutations Boolean @default(false)
+  /// Injected on storefront (synced to shop metafield when possible).
+  customCss                 String?
+  fullWidthButtonOnPdp      Boolean @default(false)
+  /// top_left | top_right | bottom_left | bottom_right
+  plpIconPlacement          String   @default("top_right")
+  googleFontFamily          String?
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt
 }
@@ -68,4 +87,78 @@ model WishlistItem {
 
   @@unique([shop, customerId, variantId])
   @@index([shop, customerId])
+}
+
+/// Public read-only share token for a customer's wishlist (logged-in users).
+model WishlistShare {
+  id         String   @id @default(cuid())
+  shop       String
+  customerId String
+  token      String   @unique
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@unique([shop, customerId])
+  @@index([shop])
+}
+
+/// Snapshot share for guest wishlists (items stored as JSON).
+model WishlistGuestShare {
+  id        String   @id @default(cuid())
+  shop      String
+  guestId   String
+  token     String   @unique
+  itemsJson String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([shop, guestId])
+  @@index([shop, guestId])
+}
+
+/// Analytics / automation events (PDF metrics + Flow hooks).
+model WishlistEvent {
+  id          String   @id @default(cuid())
+  shop        String
+  /// wishlist_added | wishlist_removed | wishlist_shared | share_visit | wishlist_page_view | wishlist_to_cart | guest_merge
+  type        String
+  customerId  String?
+  guestId     String?
+  productId   String?
+  variantId   String?
+  sourcePage  String?
+  createdAt   DateTime @default(now())
+
+  @@index([shop, createdAt])
+  @@index([shop, type])
+}
+
+/// Merchant-generated headless / integration keys (hashed at rest).
+model HeadlessApiKey {
+  id        String   @id @default(cuid())
+  shop      String
+  label     String
+  keyPrefix String
+  keyHash   String
+  createdAt DateTime @default(now())
+
+  @@index([shop])
+}
+
+/// Line-level revenue attributed to a variant that was on the customer's wishlist (orders/paid).
+model WishlistOrderAttribution {
+  id           String   @id @default(cuid())
+  shop         String
+  orderId      String
+  lineItemId   String
+  variantId    String
+  productId    String
+  customerId   String
+  subtotal     String
+  currencyCode String   @default("USD")
+  createdAt    DateTime @default(now())
+
+  @@unique([shop, orderId, lineItemId])
+  @@index([shop, createdAt])
+  @@index([shop, customerId, variantId])
 }

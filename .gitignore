@@ -1,6 +1,9 @@
 node_modules
 .DS_Store
 
+# Editor / local agent state
+.cursor/
+
 /.cache
 /build
 /app/build

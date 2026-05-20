@@ -42,9 +42,12 @@ export default function Index() {
           <Card>
             <BlockStack gap="400">
               <Text variant="headingMd" as="h2">Quick Actions</Text>
-              <InlineStack gap="300">
+              <InlineStack gap="300" wrap>
                 <Button url="/app/configure" variant="primary">Configure Wishlist</Button>
                 <Button url="/app/analytics">View Analytics</Button>
+                <Button url="/app/api-details">API Details</Button>
+                <Button url="/app/subscription">Subscription</Button>
+                <Button url="/app/faqs">FAQs</Button>
               </InlineStack>
             </BlockStack>
           </Card>

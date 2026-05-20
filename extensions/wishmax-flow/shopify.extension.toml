@@ -1,0 +1,45 @@
+api_version = "2024-10"
+uid = "9f294f4c-c09e-ac67-07c8-6bfbc5c68b7be5288582"
+
+[[extensions]]
+name = "Wishlist activity"
+type = "flow_trigger"
+handle = "wishmax-wishlist-activity"
+description = "Runs when shoppers use WishmaX — add/remove items or share a wishlist. Use the Event type field to branch in Flow."
+
+[settings]
+
+  [[settings.fields]]
+  type = "single_line_text_field"
+  key = "eventtype"
+  name = "Event type"
+
+  [[settings.fields]]
+  type = "single_line_text_field"
+  key = "customerid"
+  name = "Customer ID"
+
+  [[settings.fields]]
+  type = "single_line_text_field"
+  key = "guestid"
+  name = "Guest ID"
+
+  [[settings.fields]]
+  type = "single_line_text_field"
+  key = "variantid"
+  name = "Variant ID"
+
+  [[settings.fields]]
+  type = "single_line_text_field"
+  key = "productid"
+  name = "Product ID"
+
+  [[settings.fields]]
+  type = "single_line_text_field"
+  key = "sourcepage"
+  name = "Source page"
+
+  [[settings.fields]]
+  type = "single_line_text_field"
+  key = "sharetoken"
+  name = "Share token"

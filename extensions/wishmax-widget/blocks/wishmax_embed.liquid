@@ -1,6 +1,5 @@
 {% comment %}
-  WishmaX — Theme App Extension embed block
-  Add this to your theme.liquid just before </body>
+  WishmaX — Theme app embed: enable under Theme settings → App embeds.
 {% endcomment %}
 
 <script>
@@ -10,3 +9,11 @@
 </script>
 
 <script src="{{ 'wishmax.js' | asset_url }}" defer></script>
+
+{% schema %}
+{
+  "name": "WishmaX",
+  "target": "body",
+  "settings": []
+}
+{% endschema %}

@@ -9,6 +9,7 @@
   const SHOP = window.Shopify?.shop || "";
   const CUSTOMER_ID = window.__WISHMAX_CUSTOMER_ID__ || null;
   const GUEST_KEY = "wishmax_guest_wishlist";
+  const GUEST_ID_KEY = "wishmax_guest_id";
 
   // ─── Config ───────────────────────────────────────────────────────────────
 
@@ -17,18 +18,123 @@
     selectedColor: "#e53e3e",
     unselectedColor: "#000000",
     iconSize: "medium",
+    mobileIconSize: "medium",
     showOnPDP: true,
     showOnPLP: true,
+    showOnCart: true,
     showInHeader: true,
     allowGuest: true,
     allowShare: true,
     redirectToCart: true,
+    buttonText: "Add to Wishlist",
+    selectedButtonText: "Saved ♥",
+    hoverColor: "",
+    customCss: "",
+    fullWidthButtonOnPdp: false,
+    plpIconPlacement: "top_right",
+    googleFontFamily: "",
   };
+
+  function getOrCreateGuestId() {
+    try {
+      let id = localStorage.getItem(GUEST_ID_KEY);
+      if (!id) {
+        id =
+          typeof crypto !== "undefined" && crypto.randomUUID
+            ? crypto.randomUUID()
+            : `g-${Date.now()}-${Math.random().toString(36).slice(2)}`;
+        localStorage.setItem(GUEST_ID_KEY, id);
+      }
+      return id;
+    } catch (_) {
+      return "guest-unknown";
+    }
+  }
 
   async function loadConfig() {
     try {
       const res = await fetch(`${APP_URL}/api/config?shop=${SHOP}`);
-      if (res.ok) config = await res.json();
+      if (res.ok) config = { ...config, ...(await res.json()) };
+    } catch (_) {}
+  }
+
+  function fontStack() {
+    const f = config.googleFontFamily;
+    if (!f || !String(f).trim()) return null;
+    return `"${String(f).trim().replace(/"/g, "")}", system-ui, sans-serif`;
+  }
+
+  function injectGoogleFontLink() {
+    const name = config.googleFontFamily;
+    if (!name || !String(name).trim()) return;
+    const id = "wishmax-google-font";
+    if (document.getElementById(id)) return;
+    const fam = encodeURIComponent(name.trim()).replace(/%20/g, "+");
+    const link = document.createElement("link");
+    link.id = id;
+    link.rel = "stylesheet";
+    link.href = `https://fonts.googleapis.com/css2?family=${fam}:wght@400;600&display=swap`;
+    document.head.appendChild(link);
+  }
+
+  function applyCustomCssBlock() {
+    const raw = config.customCss;
+    const id = "wishmax-inline-custom-css";
+    const el = document.getElementById(id);
+    if (!raw || !String(raw).trim()) {
+      if (el) el.remove();
+      return;
+    }
+    let styleEl = el;
+    if (!styleEl) {
+      styleEl = document.createElement("style");
+      styleEl.id = id;
+      document.head.appendChild(styleEl);
+    }
+    styleEl.textContent = String(raw);
+  }
+
+  function applyTypographyToButton(btn) {
+    const fs = fontStack();
+    if (fs) btn.style.fontFamily = fs;
+  }
+
+  function applyAdvancedTheme() {
+    injectGoogleFontLink();
+    applyCustomCssBlock();
+    document.querySelectorAll(".wishmax-btn").forEach(applyTypographyToButton);
+  }
+
+  function getPlpPositionCss() {
+    const p = String(config.plpIconPlacement || "top_right").toLowerCase();
+    const base = "position:absolute;z-index:10;";
+    switch (p) {
+      case "top_left":
+        return base + "top:8px;left:8px;right:auto;bottom:auto;";
+      case "bottom_right":
+        return base + "bottom:8px;right:8px;top:auto;left:auto;";
+      case "bottom_left":
+        return base + "bottom:8px;left:8px;top:auto;right:auto;";
+      default:
+        return base + "top:8px;right:8px;bottom:auto;left:auto;";
+    }
+  }
+
+  async function trackEvent(type, extra) {
+    if (!APP_URL || !SHOP) return;
+    try {
+      const body = {
+        type,
+        shop: SHOP,
+        guestId: CUSTOMER_ID ? null : getOrCreateGuestId(),
+        customerId: CUSTOMER_ID ? String(CUSTOMER_ID) : null,
+        ...extra,
+      };
+      await fetch(`${APP_URL}/api/wishlist/event`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(body),
+      });
     } catch (_) {}
   }
 
@@ -44,10 +150,6 @@
 
   function saveGuestWishlist(items) {
     localStorage.setItem(GUEST_KEY, JSON.stringify(items));
-  }
-
-  function isInGuestWishlist(variantId) {
-    return getGuestWishlist().some((i) => i.variantId === String(variantId));
   }
 
   // ─── API helpers ──────────────────────────────────────────────────────────
@@ -91,10 +193,15 @@
       if (isInWishlist) {
         // Remove
         if (CUSTOMER_ID) {
-          await apiAction("remove", { variantId: String(variantId) });
+          await apiAction("remove", { variantId: String(variantId), sourcePage: productData.sourcePage });
         } else {
           const items = getGuestWishlist().filter((i) => i.variantId !== String(variantId));
           saveGuestWishlist(items);
+          await trackEvent("wishlist_removed", {
+            variantId: String(variantId),
+            productId: String(productData.productId || ""),
+            sourcePage: productData.sourcePage || "",
+          });
         }
         wishlistSet.delete(String(variantId));
         setButtonState(button, "default");
@@ -107,6 +214,11 @@
           if (!items.some((i) => i.variantId === String(variantId))) {
             items.push({ ...productData, variantId: String(variantId), addedAt: new Date().toISOString() });
             saveGuestWishlist(items);
+            await trackEvent("wishlist_added", {
+              variantId: String(variantId),
+              productId: String(productData.productId || ""),
+              sourcePage: productData.sourcePage || "",
+            });
           }
         }
         wishlistSet.add(String(variantId));
@@ -124,8 +236,14 @@
 
   const ICON_SIZES = { small: "18px", medium: "24px", large: "32px" };
 
-  function heartSVG(filled, color, size) {
-    const sz = ICON_SIZES[size] || "24px";
+  function effectiveIconSize() {
+    const isNarrow = window.matchMedia && window.matchMedia("(max-width: 749px)").matches;
+    const key = isNarrow ? config.mobileIconSize || config.iconSize : config.iconSize;
+    return key || "medium";
+  }
+
+  function heartSVG(filled, color, sizeKey) {
+    const sz = ICON_SIZES[sizeKey] || "24px";
     return `<svg xmlns="http://www.w3.org/2000/svg" width="${sz}" height="${sz}" viewBox="0 0 24 24"
       fill="${filled ? color : "none"}" stroke="${color}" stroke-width="2"
       stroke-linecap="round" stroke-linejoin="round" style="display:block">
@@ -136,19 +254,35 @@
   function setButtonState(button, state) {
     const isSelected = state === "selected";
     const color = isSelected ? config.selectedColor : config.unselectedColor;
+    const sz = effectiveIconSize();
 
     if (config.iconStyle === "heart") {
-      button.innerHTML = state === "loading"
-        ? `<span style="display:inline-block;width:${ICON_SIZES[config.iconSize]};height:${ICON_SIZES[config.iconSize]};opacity:0.5">${heartSVG(false, color, config.iconSize)}</span>`
-        : heartSVG(isSelected, color, config.iconSize);
+      button.innerHTML =
+        state === "loading"
+          ? `<span style="display:inline-block;width:${ICON_SIZES[sz]};height:${ICON_SIZES[sz]};opacity:0.5">${heartSVG(false, color, sz)}</span>`
+          : heartSVG(isSelected, color, sz);
     } else {
-      button.textContent = isSelected ? "Saved ♥" : "Add to Wishlist";
+      button.textContent = isSelected ? config.selectedButtonText || "Saved ♥" : config.buttonText || "Add to Wishlist";
       button.style.background = isSelected ? config.selectedColor : "";
       button.style.color = isSelected ? "#fff" : "";
     }
 
     button.setAttribute("aria-label", isSelected ? "Remove from Wishlist" : "Add to Wishlist");
     button.dataset.state = state;
+  }
+
+  function bindHover(button) {
+    if (!config.hoverColor || config.iconStyle !== "heart") return;
+    button.addEventListener("mouseenter", () => {
+      if (button.dataset.state === "default") {
+        button.innerHTML = heartSVG(false, config.hoverColor, effectiveIconSize());
+      }
+    });
+    button.addEventListener("mouseleave", () => {
+      if (button.dataset.state === "default") {
+        setButtonState(button, "default");
+      }
+    });
   }
 
   function createWishlistButton(productData) {
@@ -160,10 +294,23 @@
 
     const inWishlist = wishlistSet.has(String(productData.variantId));
     setButtonState(btn, inWishlist ? "selected" : "default");
+    bindHover(btn);
+    applyTypographyToButton(btn);
 
     btn.addEventListener("click", (e) => {
       e.preventDefault();
       e.stopPropagation();
+      const pdpForm = document.querySelector('form[action*="/cart/add"]');
+      if (pdpForm && productData.sourcePage === "pdp") {
+        const vidInput = pdpForm.querySelector('[name="id"]');
+        if (vidInput && vidInput.tagName === "SELECT") {
+          const opt = vidInput.selectedOptions && vidInput.selectedOptions[0];
+          if (!opt || opt.disabled) {
+            alert("Please select an available product variant first.");
+            return;
+          }
+        }
+      }
       toggleWishlist(btn, productData);
     });
 
@@ -176,6 +323,7 @@
       if (variantId) {
         const inWishlist = wishlistSet.has(String(variantId));
         setButtonState(btn, inWishlist ? "selected" : "default");
+        applyTypographyToButton(btn);
       }
     });
   }
@@ -190,7 +338,6 @@
     const productId = meta?.content || window.__WISHMAX_PRODUCT_ID__;
     if (!productId) return;
 
-    // Try to find the Add to Cart button as an anchor point
     const addToCartForm = document.querySelector('form[action*="/cart/add"]');
     if (!addToCartForm) return;
 
@@ -202,7 +349,7 @@
       variantId: String(variantId),
       productTitle: document.title.split(" – ")[0],
       productImage: document.querySelector('meta[property="og:image"]')?.getAttribute("content") || "",
-      productHandle: window.location.pathname.replace("/products/", ""),
+      productHandle: window.location.pathname.replace("/products/", "").split("?")[0],
       price: document.querySelector('[class*="price"]')?.textContent?.trim() || "",
       sourcePage: "pdp",
     };
@@ -213,12 +360,18 @@
 
     const wrapper = document.createElement("div");
     wrapper.className = "wishmax-pdp-wrapper";
-    wrapper.style.cssText = "display:flex;align-items:center;margin-top:8px;";
+    let wrapStyle = "display:flex;align-items:center;margin-top:8px;";
+    if (config.fullWidthButtonOnPdp && config.iconStyle === "button") {
+      wrapStyle += "width:100%;max-width:100%;";
+      btn.style.width = "100%";
+      btn.style.maxWidth = "100%";
+      btn.style.boxSizing = "border-box";
+    }
+    wrapper.style.cssText = wrapStyle;
     wrapper.appendChild(btn);
 
     addToCartForm.parentNode?.insertBefore(wrapper, addToCartForm.nextSibling);
 
-    // Re-inject when variant changes
     addToCartForm.addEventListener("change", () => {
       const newVariantId = addToCartForm.querySelector('[name="id"]')?.value;
       if (newVariantId && newVariantId !== btn.dataset.variantId) {
@@ -252,17 +405,61 @@
         variantId: String(variantId),
         productTitle: card.querySelector("[class*='title'], h3, h2")?.textContent?.trim() || "",
         productImage: img?.src || "",
-        productHandle: card.querySelector("a[href*='/products/']")?.pathname.replace("/products/", "") || "",
+        productHandle: card.querySelector("a[href*='/products/']")?.pathname.replace("/products/", "").split("?")[0] || "",
         price: card.querySelector("[class*='price']")?.textContent?.trim() || "",
         sourcePage: "plp",
       };
 
       const btn = createWishlistButton(productData);
       btn.classList.add("wishmax-btn--plp");
-      btn.style.cssText += "position:absolute;top:8px;right:8px;z-index:10;";
+      btn.style.cssText += getPlpPositionCss();
 
       imgWrapper.appendChild(btn);
     });
+  }
+
+  // ─── Cart page ────────────────────────────────────────────────────────────
+
+  async function injectCart() {
+    if (!config.showOnCart) return;
+    if (!window.location.pathname.includes("/cart")) return;
+    if (document.querySelector(".wishmax-cart-done")) return;
+
+    let cart;
+    try {
+      const res = await fetch("/cart.js");
+      cart = await res.json();
+    } catch (_) {
+      return;
+    }
+
+    const rows = document.querySelectorAll(".cart-item, tr.cart-item, [data-cart-item]");
+    cart.items.forEach((line, index) => {
+      const row = rows[index];
+      if (!row || row.querySelector(".wishmax-btn--cart")) return;
+
+      const productData = {
+        productId: String(line.product_id),
+        variantId: String(line.variant_id),
+        productTitle: line.title,
+        productImage: line.image,
+        productHandle: typeof line.url === "string" ? line.url.replace("/products/", "").split("?")[0] : "",
+        price: line.presentment_price != null ? String(line.presentment_price) : "",
+        sourcePage: "cart",
+      };
+
+      const btn = createWishlistButton(productData);
+      btn.classList.add("wishmax-btn--cart");
+      btn.style.cssText += "margin-left:8px;vertical-align:middle;";
+
+      const anchor = row.querySelector("td:last-of-type, .cart-item__details, .cart-item__totals") || row;
+      anchor.appendChild(btn);
+    });
+
+    const marker = document.createElement("div");
+    marker.className = "wishmax-cart-done";
+    marker.style.display = "none";
+    document.body.appendChild(marker);
   }
 
   // ─── Header counter ───────────────────────────────────────────────────────
@@ -278,7 +475,8 @@
       if (!headerLink) return;
       badge = document.createElement("span");
       badge.className = "wishmax-header-count";
-      badge.style.cssText = "display:inline-flex;align-items:center;justify-content:center;background:#e53e3e;color:#fff;border-radius:50%;font-size:11px;min-width:16px;height:16px;padding:0 3px;margin-left:2px;";
+      badge.style.cssText =
+        "display:inline-flex;align-items:center;justify-content:center;background:#e53e3e;color:#fff;border-radius:50%;font-size:11px;min-width:16px;height:16px;padding:0 3px;margin-left:2px;";
       headerLink.appendChild(badge);
     }
 
@@ -303,16 +501,19 @@
 
   async function init() {
     await loadConfig();
+    applyAdvancedTheme();
     await mergeGuestWishlist();
     await refreshWishlistSet();
 
     injectPDP();
     injectPLP();
+    injectCart();
+    applyAdvancedTheme();
     updateHeaderCount();
 
-    // Re-run PLP injection for dynamically loaded content
     const observer = new MutationObserver(() => {
       injectPLP();
+      injectCart();
       updateHeaderCount();
     });
     observer.observe(document.body, { childList: true, subtree: true });

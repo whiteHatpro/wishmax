@@ -13,6 +13,40 @@ Rather than cloning this repo, you can use your preferred package manager and th
 
 Visit the [`shopify.dev` documentation](https://shopify.dev/docs/api/shopify-app-remix) for more details on the Remix app package.
 
+## Testing WishmaX on your machine
+
+For **this project** (clone prerequisites, `.env`, database, `shopify app dev`, theme embed + wishlist block, Flow trigger, share links), use **[docs/TESTING.md](docs/TESTING.md)**.
+
+### For reviewers and QA
+
+| Doc | Use it for |
+|-----|------------|
+| **[docs/TESTING.md](docs/TESTING.md)** | Local setup, automated verification, short smoke table |
+| **[docs/MANUAL_QA.md](docs/MANUAL_QA.md)** | Step-by-step manual QA before release or for PR review |
+| **[docs/REQUIREMENTS_DRY_RUN.md](docs/REQUIREMENTS_DRY_RUN.md)** | PDF requirements vs what the codebase implements |
+
+### After every significant change
+
+Run **`npm run verify`** (build, lint, Prisma validate, Shopify app config validate) before opening a PR. For theme-extension edits under `extensions/wishmax-widget/`, also run **Theme Check** (exact command and a `npm exec @shopify/cli` fallback if the global `shopify` CLI is not installed) in **[docs/TESTING.md](docs/TESTING.md)** §4.
+
+**Known noise:** `npm run build` may print CSS minify warnings from Polaris (`@media`); they do not fail the build.
+
+## Database (Prisma)
+
+WishmaX uses **Prisma** with **SQLite** for local development by default (`prisma/schema.prisma` → `file:dev.sqlite`, resolved as **`prisma/dev.sqlite`**). That file is **gitignored** — each developer creates it locally.
+
+**First clone or after pulling migrations:**
+
+```bash
+npm install
+npx prisma migrate dev    # creates prisma/dev.sqlite and applies migrations
+npx prisma generate       # usually run by migrate dev; safe to repeat
+```
+
+**Production / CI deploy:** the `setup` script runs `prisma generate` and `prisma migrate deploy` (see `package.json` → `"setup"`). Point production at your chosen database by changing the `datasource` in `schema.prisma` (and session storage if you move off Prisma SQLite).
+
+**Useful commands:** `npx prisma studio` opens a GUI on the local DB. Migrations live in **`prisma/migrations/`**.
+
 ## Quick start
 
 ### Prerequisites
