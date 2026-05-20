@@ -10,7 +10,8 @@ QA can either run Postgres locally (**Docker**) or use a **hosted** free-tier da
 | Scenario | Where the URL lives |
 |---------|---------------------|
 | **Your laptop + Docker Compose** | You build it from `docker-compose.yml`: user `wishme`, password `wishme`, host `localhost` (often `127.0.0.1`), port `5432`, database `wishme` — usable **only on your machine**. |
-| **Shared QA / team testing** | Create a Postgres instance in **[Neon](https://neon.tech)**, **[Supabase](https://supabase.com)**, **Railway**, etc. Copy the **`DATABASE_URL`** (or assemble it) **from their project dashboard** → put it in each tester’s local `.env` or in your staging host’s secrets. |
+| **Team shared Postgres (recommended for WishMe QA)** | **Prisma Postgres** — see **[SHARED_PRISMA_POSTGRES.md](SHARED_PRISMA_POSTGRES.md)** (database `wishme-shared-qa`; URLs only in `.env` / Prisma Console / MCP tools). |
+| **Other hosted Postgres** | **[Neon](https://neon.tech)**, **[Supabase](https://supabase.com)**, **Railway**, etc., from their dashboards. |
 
 What you send QA is literally that **connection string** (treat like a password). Optional: Neon “**Pooling**” URL for runtime and “**Direct**” for `prisma migrate deploy` — see provider docs linked from `docs/DEPLOY.md`.
 
