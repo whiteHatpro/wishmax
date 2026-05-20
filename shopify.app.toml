@@ -32,9 +32,11 @@ api_version = "2024-10"
   topics = ["app/scopes_update"]
   uri = "/webhooks/app/scopes_update"
 
-  [[webhooks.subscriptions]]
-  topics = ["orders/paid"]
-  uri = "/webhooks/orders/paid"
+  # Deferred until Shopify approves Protected Customer Data for this app.
+  # Subscribe again after: https://shopify.dev/docs/apps/launch/protected-customer-data
+  # [[webhooks.subscriptions]]
+  # topics = ["orders/paid"]
+  # uri = "/webhooks/orders/paid"
 
   # Webhooks can have filters
   # Only receive webhooks for product updates with a product price >= 10.00

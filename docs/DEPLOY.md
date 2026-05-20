@@ -64,6 +64,16 @@ This uploads **theme extension**, **Flow extension**, and app configuration. You
 
 In the development store: **Online Store → Themes → Customize → App embeds** — enable the WishMe embed; add the wishlist page section if you use it.
 
+## 6. `shopify app deploy` + Protected Customer Data
+
+From the repo (CLI logged into the right Partner org):
+
+```bash
+npm exec --yes -- @shopify/cli app deploy --allow-updates
+```
+
+**`orders/paid` webhook:** Shopify rejects app versions that subscribe to **`orders/paid`** until your app meets [Protected Customer Data](https://shopify.dev/docs/apps/launch/protected-customer-data) requirements for that bundle. Until then, **`shopify.app.toml`** ships with that webhook **commented out** (wishlist/order attribution webhook handler remains in code for when you uncomment + redeploy).
+
 ---
 
-I can’t log into your Partner account from this chat — run the steps above on your machine or CI with your credentials.
+Production deploy remains your hosting + env vars above; **`shopify app deploy`** only pushes **Partner app versions** (CLI extensions + declarative webhook config tied to those versions).
