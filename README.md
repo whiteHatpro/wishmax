@@ -28,6 +28,7 @@ For **this project** (clone prerequisites, `.env` from [`env.example`](env.examp
 | **[docs/REQUIREMENTS_DRY_RUN.md](docs/REQUIREMENTS_DRY_RUN.md)** | PDF requirements vs what the codebase implements |
 | **[docs/QA_DATABASE.md](docs/QA_DATABASE.md)** | Shared PostgreSQL / `DATABASE_URL` for QA |
 | **[docs/DEPLOY.md](docs/DEPLOY.md)** | Hosting the app and `shopify app deploy` |
+| **[docs/FIND_APP_METRIX_DEV.md](docs/FIND_APP_METRIX_DEV.md)** | WishMe missing on **`metrix-dev`** — install + URLs checklist |
 | **[docs/SHARED_PRISMA_POSTGRES.md](docs/SHARED_PRISMA_POSTGRES.md)** | Shared Prisma Postgres QA DB reference (IDs only; URLs in `.env`) |
 
 ### After every significant change
