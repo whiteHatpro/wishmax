@@ -13,7 +13,19 @@ cd /Users/mohak.srivastav/Projects/wishmax   # or your clone path
 cp env.example .env                          # fill SHOPIFY_*, DATABASE_URL first
 docker compose up -d                         # or your hosted Postgres DATABASE_URL only
 npx prisma migrate deploy && npx prisma generate
-npm run shopify app dev -- --store metrix-dev.myshopify.com
+npx --yes @shopify/cli app dev --store metrix-dev.myshopify.com
+```
+
+(`npm run shopify …` fails if the global/binary `shopify` is not on your `PATH`; use **`npx @shopify/cli`** instead.)
+
+### Port `9293` already in use (theme preview)
+
+Kill the orphaned listener:
+
+```bash
+lsof -nP -iTCP:9293 -sTCP:LISTEN
+kill -9 <PID>
+shopify app dev clean --store metrix-dev.myshopify.com   # optional reset
 ```
 
 - Wait until the CLI prints **Preview URL** / **Installed** / prompts to press **Open app**.
@@ -25,9 +37,17 @@ npm run shopify app dev -- --store metrix-dev.myshopify.com
 
 ## 2. Direct install attempt (logged into **same** account as Partner)
 
-Paste this **while logged into Shopify Admin** as a user with access to **metrix-dev**:
+Paste this **while logged into Shopify Admin** as the **same Partner user** (`shopify auth` / WishMe):
+
+**CLI install URL (recommended):**
+
+[`https://admin.shopify.com/?organization_id=217163417&no_redirect=true&redirect=/oauth/redirect_from_developer_dashboard?client_id%3D88fd29f22076ef832e5a11762d014184`](https://admin.shopify.com/?organization_id=217163417&no_redirect=true&redirect=/oauth/redirect_from_developer_dashboard?client_id%3D88fd29f22076ef832e5a11762d014184)
+
+Alternative:
 
 [Install WishMe on metrix-dev (OAuth)](https://admin.shopify.com/store/metrix-dev/oauth/install?client_id=88fd29f22076ef832e5a11762d014184)
+
+With **`shopify app dev`** running, logs may show **`Access scopes auto-granted`** (managed installation) — then WishMe appears under **Apps** without a separate OAuth click.
 
 If Shopify shows an error, read the message: bad **application URL** / wrong store / already installed flows are common.
 

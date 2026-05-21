@@ -26,3 +26,4 @@ pnpm-lock.yaml
 # Ignore shopify files created during app dev
 .shopify/*
 .shopify.lock
+.shopify-dev-run.log
